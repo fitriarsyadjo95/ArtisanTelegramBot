@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page {
+        size: A4;
+        margin: 12mm 12mm 10mm 12mm;
+    }
+    body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        font-size: 9.5pt;
+        color: #000;
+        line-height: 1.3;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* ─── Header ─── */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 5px;
+    }
+    .header-left {
+        flex: 1;
+    }
+    .company-name {
+        font-size: 22pt;
+        font-weight: bold;
+        margin: 0 0 5px 0;
+    }
+    .company-address {
+        font-size: 8.5pt;
+        line-height: 1.4;
+        margin-bottom: 5px;
+    }
+    .company-tel {
+        font-size: 8.5pt;
+    }
+    .header-center {
+        flex: 1;
+        text-align: center;
+        padding-top: 20px;
+    }
+    .header-center h1 {
+        font-size: 22pt;
+        margin: 0;
+        letter-spacing: 2px;
+    }
+    .header-right {
+        flex: 0.6;
+        text-align: right;
+    }
+    .header-right img {
+        height: 80px;
+    }
+
+    /* ─── Customer Info ─── */
+    .info-box {
+        border: 1px solid #000;
+        margin-bottom: 0;
+    }
+    .info-row {
+        display: flex;
+    }
+    .info-left {
+        flex: 1.2;
+        padding: 5px 8px;
+        border-right: 1px solid #000;
+    }
+    .info-right {
+        flex: 1;
+        padding: 0;
+    }
+    .info-right table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .info-right td {
+        padding: 3px 8px;
+        font-size: 9pt;
+        border-bottom: 1px solid #ccc;
+    }
+    .info-right td:first-child {
+        font-weight: bold;
+        width: 70px;
+    }
+    .quo-label {
+        font-size: 8pt;
+        color: #333;
+    }
+    .customer-label {
+        font-size: 8pt;
+        font-weight: bold;
+    }
+    .customer-name {
+        font-size: 11pt;
+        font-weight: bold;
+    }
+    .customer-address {
+        font-size: 8.5pt;
+        margin-top: 2px;
+    }
+
+    /* ─── Items Table ─── */
+    table.items {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #000;
+        margin: 0;
+    }
+    table.items th {
+        background: #fff;
+        color: #000;
+        padding: 6px 5px;
+        text-align: center;
+        font-size: 9pt;
+        font-weight: bold;
+        border: 1px solid #000;
+    }
+    table.items td {
+        padding: 4px 5px;
+        border: 1px solid #000;
+        font-size: 8.5pt;
+        vertical-align: top;
+    }
+    .col-item {
+        width: 40px;
+        text-align: center;
+    }
+    .col-desc {
+        /* flex */
+    }
+    .col-sqft {
+        width: 60px;
+        text-align: center;
+    }
+    .col-rate {
+        width: 90px;
+        text-align: right;
+    }
+    .col-amount {
+        width: 100px;
+        text-align: right;
+    }
+    td.desc-cell {
+        font-size: 8.5pt;
+        line-height: 1.4;
+    }
+    td.desc-cell p {
+        margin: 2px 0;
+    }
+    .ls-label {
+        text-align: center;
+    }
+
+    /* ─── Totals ─── */
+    .totals-row td {
+        padding: 4px 5px;
+        font-size: 10pt;
+        border: 1px solid #000;
+    }
+    .total-label {
+        text-align: right;
+        font-weight: bold;
+    }
+    .discount-label {
+        text-align: right;
+        font-weight: bold;
+        color: #c0392b;
+    }
+    .grand-total-label {
+        text-align: right;
+        font-weight: bold;
+        font-size: 12pt;
+    }
+    .grand-total-value {
+        font-weight: bold;
+        font-size: 12pt;
+        text-align: right;
+    }
+
+    /* ─── Remarks ─── */
+    .remarks {
+        margin-top: 10px;
+        font-size: 8pt;
+        line-height: 1.5;
+    }
+    .remarks h3 {
+        font-size: 9pt;
+        margin: 0 0 3px 0;
+        text-decoration: underline;
+    }
+    .remarks p {
+        margin: 1px 0;
+    }
+
+    /* ─── Terms ─── */
+    .terms-payment {
+        margin-top: 8px;
+        font-size: 9pt;
+    }
+    .terms-payment h3 {
+        margin: 0 0 2px 0;
+        text-decoration: underline;
+    }
+    .terms-payment p {
+        margin: 1px 0;
+        font-weight: bold;
+    }
+
+    /* ─── Footer / Signature ─── */
+    .footer-box {
+        margin-top: 12px;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+    .footer-header {
+        display: flex;
+        border-bottom: 1px solid #000;
+    }
+    .footer-header-left {
+        flex: 1;
+        padding: 3px 8px;
+        font-size: 8pt;
+    }
+    .footer-header-center {
+        flex: 0.8;
+        text-align: center;
+        padding: 3px 8px;
+        font-size: 9pt;
+        font-weight: bold;
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+    }
+    .footer-header-right {
+        flex: 1;
+        padding: 3px 8px;
+        text-align: right;
+        font-size: 8pt;
+    }
+    .footer-body {
+        display: flex;
+        min-height: 100px;
+    }
+    .footer-auth {
+        flex: 1;
+        padding: 8px;
+        border-right: 1px solid #000;
+        font-size: 8pt;
+    }
+    .footer-stamp {
+        flex: 0.8;
+        text-align: center;
+        padding: 8px;
+        border-right: 1px solid #000;
+    }
+    .footer-stamp img {
+        height: 80px;
+    }
+    .footer-received {
+        flex: 1;
+        padding: 8px;
+        font-size: 8pt;
+    }
+    .sig-line {
+        margin-top: 40px;
+    }
+    .sig-field {
+        margin-top: 5px;
+    }
+</style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <p class="company-name">{{ company.name }}</p>
+            <div class="company-address">
+                {{ company.address }}
+            </div>
+            <div class="company-tel">
+                Tel: {{ company.phone }}
+            </div>
+        </div>
+        <div class="header-center">
+            <h1>QUOTATION</h1>
+        </div>
+        <div class="header-right">
+            {% if stamp_path %}
+            <img src="file://{{ stamp_path }}" alt="Company Logo">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Customer Info Box -->
+    <div class="info-box">
+        <div class="info-row">
+            <div class="info-left">
+                <div class="customer-label">QUOTATION TO :</div>
+                <div class="customer-name">{{ customer.name }}</div>
+                <div class="customer-address">
+                    {% if customer.address %}{{ customer.address }}{% endif %}
+                </div>
+            </div>
+            <div class="info-right">
+                <table>
+                    <tr>
+                        <td><strong>QUO No :</strong></td>
+                        <td>{{ quotation.quotation_number }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date :</td>
+                        <td>{{ quotation.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td>Job :</td>
+                        <td>{{ quotation.job_location or '' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Note :</td>
+                        <td>{{ quotation.notes or '' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="items">
+        <thead>
+            <tr>
+                <th class="col-item">ITEM</th>
+                <th>DESCRIPTION</th>
+                <th class="col-sqft">SQFT</th>
+                <th class="col-rate">RATE</th>
+                <th class="col-amount">AMOUNT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in line_items %}
+            <tr>
+                <td class="col-item">{{ loop.index }}</td>
+                <td class="desc-cell">{{ (item.description or (item.pattern.name if item.pattern else 'Item')) | nl2br }}</td>
+                {% if item.pricing_type == 'custom' %}
+                <td class="col-sqft">{{ "%.0f"|format(item.quantity) if item.quantity else '' }}</td>
+                {% if item.unit == 'LS' %}
+                <td class="col-rate ls-label">LS</td>
+                {% else %}
+                <td class="col-rate">{% if item.unit_price %}RM&nbsp;&nbsp;&nbsp;{{ "%.2f"|format(item.unit_price) }}/{{ item.unit|lower }}{% endif %}</td>
+                {% endif %}
+                {% elif item.pricing_type == 'lumpsum' %}
+                <td class="col-sqft">1</td>
+                <td class="col-rate ls-label">LS</td>
+                {% else %}
+                <td class="col-sqft">{{ "%.0f"|format(item.area_sqft) if item.area_sqft else '' }}</td>
+                <td class="col-rate">{% if item.rate_per_sqft %}RM&nbsp;&nbsp;&nbsp;{{ "%.2f"|format(item.rate_per_sqft) }}{% endif %}</td>
+                {% endif %}
+                <td class="col-amount">RM&nbsp;&nbsp;&nbsp;{{ "{:,.2f}".format(item.amount) }}</td>
+            </tr>
+            {% endfor %}
+
+            <!-- Empty rows to fill space -->
+            {% for _ in range(max_empty_rows) %}
+            <tr>
+                <td class="col-item">&nbsp;</td>
+                <td class="desc-cell">&nbsp;</td>
+                <td class="col-sqft">&nbsp;</td>
+                <td class="col-rate">&nbsp;</td>
+                <td class="col-amount">&nbsp;</td>
+            </tr>
+            {% endfor %}
+
+            <!-- Totals -->
+            <tr class="totals-row">
+                <td colspan="3" style="border: none;"></td>
+                <td class="total-label" style="border: 1px solid #000;">TOTAL</td>
+                <td class="col-amount" style="border: 1px solid #000; font-weight: bold;">RM&nbsp;&nbsp;&nbsp;{{ "{:,.2f}".format(quotation.subtotal) }}</td>
+            </tr>
+            <tr class="totals-row">
+                <td colspan="3" style="border: none;"></td>
+                <td class="discount-label" style="border: 1px solid #000;">DISCOUNT</td>
+                <td class="col-amount" style="border: 1px solid #000; color: #c0392b;">{% if quotation.discount_amount > 0 %}RM&nbsp;&nbsp;&nbsp;{{ "{:,.2f}".format(quotation.discount_amount) }}{% endif %}</td>
+            </tr>
+            <tr class="totals-row">
+                <td colspan="3" style="border: none;"></td>
+                <td class="grand-total-label" style="border: 1px solid #000;">GRAND TOTAL</td>
+                <td class="grand-total-value" style="border: 1px solid #000;">RM&nbsp;&nbsp;&nbsp;{{ "{:,.2f}".format(quotation.total_amount) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Remarks -->
+    <div class="remarks">
+        <h3>Remarks:</h3>
+        <p>- Price given is valid for 7 days upon issuance date of quotation</p>
+        <p>- Pattern & color selected cannot be changed once site work have started. Should the client decide to change pattern & color upon starting of work, a Variation Order (V.O) of work will be charged accordingly.</p>
+        <p>- Suitability to install concrete imprint shall be determined upon site visit. Evaluation shall be based on visible site condition.</p>
+        <p>- Client to ensure footing/ground have been fully settled before commencing imprint works. Any cracks due to footing/ground movement shall not be covered in our warranty.</p>
+        <p>- Any repair works due to 3rd party cause of damage shall be charged accordingly.</p>
+        <p>-Natural cause of damage (flood, landslide, etc) & site related cause of damage (underground leaking, faulty structure, etc) shall not be covered in our warranty.</p>
+        <p>-Do expect an overall 5% minor imperfection to finished cement product.</p>
+    </div>
+
+    <!-- Terms of Payment -->
+    <div class="terms-payment">
+        <h3>Terms Of Payment :</h3>
+        <p>*60% upon confirmation</p>
+        <p>*40% upon complection.</p>
+    </div>
+
+    <!-- Footer / Signature Block -->
+    <div class="footer-box">
+        <div class="footer-header">
+            <div class="footer-header-left">AUTHORIZED BY</div>
+            <div class="footer-header-center">FOR OFFICE</div>
+            <div class="footer-header-right">ACKNOWLEDGEMENT</div>
+        </div>
+        <div class="footer-body">
+            <div class="footer-auth">
+                <div class="sig-line">&nbsp;</div>
+                <div class="sig-field">Name: {{ company.authorized_by }}</div>
+                <div class="sig-field">Date: {{ quotation.created_at.strftime('%d/%m/%Y') }}</div>
+            </div>
+            <div class="footer-stamp">
+                {% if stamp_path %}
+                <img src="file://{{ stamp_path }}" alt="Company Stamp">
+                {% endif %}
+            </div>
+            <div class="footer-received">
+                <div style="font-size: 8pt;">RECEIVED BY</div>
+                <div class="sig-line">&nbsp;</div>
+                <div class="sig-field">Name:</div>
+                <div class="sig-field">Date:</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

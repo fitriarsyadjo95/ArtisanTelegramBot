@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page {
+        size: A4;
+        margin: 20mm 15mm;
+    }
+    body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        font-size: 11pt;
+        color: #333;
+        line-height: 1.4;
+    }
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 3px solid #2c3e50;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    .company-name {
+        font-size: 24pt;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 0;
+    }
+    .company-tagline {
+        font-size: 10pt;
+        color: #7f8c8d;
+        margin: 2px 0;
+    }
+    .company-details {
+        font-size: 9pt;
+        color: #555;
+    }
+    .doc-title {
+        font-size: 20pt;
+        font-weight: bold;
+        color: #c0392b;
+        text-align: right;
+    }
+    .doc-meta {
+        text-align: right;
+        font-size: 10pt;
+        color: #555;
+    }
+    .doc-meta strong {
+        color: #333;
+    }
+    .section {
+        margin: 15px 0;
+    }
+    .section-title {
+        font-size: 10pt;
+        font-weight: bold;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+    .customer-info {
+        background: #f8f9fa;
+        padding: 12px;
+        border-left: 3px solid #2c3e50;
+    }
+    .customer-name {
+        font-weight: bold;
+        font-size: 12pt;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 10pt;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .status-unpaid {
+        background: #ffeaa7;
+        color: #d68910;
+    }
+    .status-partial {
+        background: #dfe6e9;
+        color: #636e72;
+    }
+    .status-paid {
+        background: #a8e6cf;
+        color: #00a651;
+    }
+    table.items {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+    table.items th {
+        background: #2c3e50;
+        color: white;
+        padding: 10px 8px;
+        text-align: left;
+        font-size: 10pt;
+        font-weight: 600;
+    }
+    table.items th:last-child,
+    table.items td:last-child {
+        text-align: right;
+    }
+    table.items th.num-col,
+    table.items td.num-col {
+        text-align: right;
+    }
+    table.items td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 10pt;
+    }
+    table.items tr:nth-child(even) td {
+        background: #f8f9fa;
+    }
+    .totals {
+        float: right;
+        width: 250px;
+        margin-top: 10px;
+    }
+    .totals table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .totals td {
+        padding: 5px 8px;
+        font-size: 10pt;
+    }
+    .totals .label {
+        text-align: right;
+        color: #555;
+    }
+    .totals .value {
+        text-align: right;
+        font-weight: bold;
+        width: 120px;
+    }
+    .totals .grand-total td {
+        border-top: 2px solid #2c3e50;
+        font-size: 13pt;
+        color: #2c3e50;
+        padding-top: 10px;
+    }
+    .totals .paid td {
+        color: #27ae60;
+    }
+    .totals .balance td {
+        border-top: 2px solid #c0392b;
+        font-size: 13pt;
+        color: #c0392b;
+        padding-top: 10px;
+    }
+    .clearfix::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    .payment-info {
+        margin-top: 30px;
+        padding: 15px;
+        background: #fff5f5;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+    }
+    .payment-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 11pt;
+        color: #c0392b;
+    }
+    .payment-info p {
+        margin: 3px 0;
+        font-size: 10pt;
+    }
+    .bank-info {
+        margin-top: 15px;
+        background: #f0f7ff;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 9pt;
+    }
+    .bank-info strong {
+        color: #2c3e50;
+    }
+    .footer {
+        margin-top: 30px;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .footer-text {
+        font-size: 9pt;
+        color: #999;
+    }
+    .footer-stamp {
+        text-align: right;
+    }
+    .footer-stamp img {
+        height: 90px;
+        width: auto;
+    }
+</style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <p class="company-name">{{ company.name }}</p>
+            <p class="company-tagline">Stamped Concrete Specialist</p>
+            <div class="company-details">
+                {% if company.ssm %}SSM: {{ company.ssm }}<br>{% endif %}
+                {% if company.phone %}Tel: {{ company.phone }}<br>{% endif %}
+                {% if company.address %}{{ company.address }}{% endif %}
+            </div>
+        </div>
+        <div>
+            <p class="doc-title">INVOICE</p>
+            <div class="doc-meta">
+                <strong>Invoice No:</strong> {{ invoice.invoice_number }}<br>
+                <strong>Date:</strong> {{ invoice.created_at.strftime('%d/%m/%Y') }}<br>
+                <strong>Due Date:</strong> {{ invoice.due_date.strftime('%d/%m/%Y') if invoice.due_date else 'N/A' }}<br>
+                <strong>Ref:</strong> {{ quotation.quotation_number }}<br><br>
+                <span class="status-badge status-{{ invoice.payment_status }}">
+                    {{ invoice.payment_status | upper }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Invoice To</div>
+        <div class="customer-info">
+            <div class="customer-name">{{ customer.name }}</div>
+            {% if customer.address %}{{ customer.address }}<br>{% endif %}
+            {% if customer.phone %}Tel: {{ customer.phone }}<br>{% endif %}
+            {% if customer.email %}Email: {{ customer.email }}{% endif %}
+        </div>
+    </div>
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th style="width: 30px;">#</th>
+                <th>Description</th>
+                <th class="num-col" style="width: 90px;">Area (sqft)</th>
+                <th class="num-col" style="width: 90px;">Rate/sqft</th>
+                <th class="num-col" style="width: 100px;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in line_items %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ (item.description or (item.pattern.name if item.pattern else 'Item')) | nl2br }}</td>
+                {% if item.pricing_type == 'custom' %}
+                <td class="num-col">{{ "%.0f"|format(item.quantity) if item.quantity else '' }} {{ item.unit or '' }}</td>
+                <td class="num-col">{% if item.unit_price and item.unit != 'LS' %}{{ item.unit_price|currency }}/{{ item.unit|lower }}{% elif item.unit == 'LS' %}LS{% endif %}</td>
+                {% elif item.pricing_type == 'lumpsum' %}
+                <td class="num-col" colspan="2" style="text-align: center; color: #777;">Lumpsum</td>
+                {% else %}
+                <td class="num-col">{{ "%.2f"|format(item.area_sqft) if item.area_sqft else '' }}</td>
+                <td class="num-col">{% if item.rate_per_sqft %}{{ item.rate_per_sqft|currency }}{% endif %}</td>
+                {% endif %}
+                <td class="num-col">{{ item.amount|currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="clearfix">
+        <div class="totals">
+            <table>
+                <tr>
+                    <td class="label">Subtotal:</td>
+                    <td class="value">{{ quotation.subtotal|currency }}</td>
+                </tr>
+                {% if quotation.discount_pct > 0 %}
+                <tr>
+                    <td class="label">Discount ({{ "%.1f"|format(quotation.discount_pct) }}%):</td>
+                    <td class="value">-{{ ((quotation.subtotal * quotation.discount_pct / 100))|currency }}</td>
+                </tr>
+                {% endif %}
+                <tr class="grand-total">
+                    <td class="label">TOTAL:</td>
+                    <td class="value">{{ invoice.total_amount|currency }}</td>
+                </tr>
+                {% if invoice.amount_paid > 0 %}
+                <tr class="paid">
+                    <td class="label">Paid:</td>
+                    <td class="value">{{ invoice.amount_paid|currency }}</td>
+                </tr>
+                <tr class="balance">
+                    <td class="label">BALANCE DUE:</td>
+                    <td class="value">{{ (invoice.total_amount - invoice.amount_paid)|currency }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <div class="payment-info">
+        <h3>Payment Information</h3>
+        <p><strong>Due Date:</strong> {{ invoice.due_date.strftime('%d/%m/%Y') if invoice.due_date else 'Upon receipt' }}</p>
+        <p><strong>Payment Terms:</strong> Please make payment by the due date to avoid any delays.</p>
+    </div>
+
+    {% if bank.name and bank.account %}
+    <div class="bank-info">
+        <strong>Bank Transfer Details:</strong><br>
+        Bank: {{ bank.name }} | Account No: {{ bank.account }} | Account Name: {{ bank.holder }}
+    </div>
+    {% endif %}
+
+    {% if invoice.notes %}
+    <div class="section" style="margin-top: 10px;">
+        <div class="section-title">Notes</div>
+        <p style="font-size: 9pt; color: #555;">{{ invoice.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <div class="footer-text">
+            Thank you for your business! — {{ company.name }}
+        </div>
+        <div class="footer-stamp">
+            {% if stamp_path %}
+            <img src="file://{{ stamp_path }}" alt="Company Stamp">
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
