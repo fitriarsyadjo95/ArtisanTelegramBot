@@ -1,3 +1,4 @@
+import logging
 from datetime import date, timedelta
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -7,6 +8,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
@@ -15,6 +17,8 @@ from app.bot.keyboards import calendar_menu_keyboard, main_menu_keyboard
 from app.bot.states import CalendarStates
 from app.database import async_session
 from app.services import calendar_service, customer_service, slot_service
+
+logger = logging.getLogger(__name__)
 
 
 # ─── View Schedule ───
@@ -288,16 +292,26 @@ async def confirm_booking(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         customer_phone=book.get("customer_phone"),
     )
 
-    # Save to database
-    async with async_session() as session:
-        visit = await slot_service.create_visit(
-            session,
-            customer_id=book["customer_id"],
-            visit_date=target_date,
-            visit_time=book["time"],
-            details=book["details"],
-            google_event_id=google_event_id,
+    # Save to database — rollback Google Calendar event on failure
+    try:
+        async with async_session() as session:
+            visit = await slot_service.create_visit(
+                session,
+                customer_id=book["customer_id"],
+                visit_date=target_date,
+                visit_time=book["time"],
+                details=book["details"],
+                google_event_id=google_event_id,
+            )
+    except Exception:
+        logger.exception("Failed to save site visit to database")
+        if google_event_id:
+            await calendar_service.delete_event(google_event_id)
+        await query.edit_message_text(
+            "❌ Failed to book site visit. Please try again.",
+            reply_markup=calendar_menu_keyboard(),
         )
+        return ConversationHandler.END
 
     # Generate the broadcast message
     broadcast_msg = calendar_service.generate_site_visit_message(
@@ -347,6 +361,17 @@ async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return ConversationHandler.END
 
 
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.pop("book", None)
+    if update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⏰ Booking session expired. Please start over.",
+            reply_markup=calendar_menu_keyboard(),
+        )
+    return ConversationHandler.END
+
+
 # ─── Register handlers ───
 
 
@@ -377,6 +402,7 @@ def get_calendar_handlers() -> list:
                 CallbackQueryHandler(confirm_booking, pattern="^book_confirm$"),
                 CallbackQueryHandler(cancel_callback, pattern="^cal_cancel$"),
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[
             CommandHandler("cancel", cancel),

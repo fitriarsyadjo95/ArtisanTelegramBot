@@ -5,6 +5,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
@@ -281,10 +282,25 @@ async def edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    context.user_data.clear()
+    context.user_data.pop("new_customer", None)
+    context.user_data.pop("edit_customer_id", None)
+    context.user_data.pop("edit_field", None)
     if update.message:
         await update.message.reply_text(
             "Cancelled.", reply_markup=main_menu_keyboard()
+        )
+    return ConversationHandler.END
+
+
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.pop("new_customer", None)
+    context.user_data.pop("edit_customer_id", None)
+    context.user_data.pop("edit_field", None)
+    if update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⏰ Session expired. Please start over.",
+            reply_markup=customer_menu_keyboard(),
         )
     return ConversationHandler.END
 
@@ -299,6 +315,7 @@ def get_customer_handlers() -> list:
             CustomerStates.SEARCH_INPUT: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND & admin_filter, search_input)
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,
@@ -322,6 +339,7 @@ def get_customer_handlers() -> list:
             CustomerStates.CONFIRM_CREATE: [
                 CallbackQueryHandler(create_confirm, pattern="^cust_(save|cancel_create)$")
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,
@@ -336,6 +354,7 @@ def get_customer_handlers() -> list:
             CustomerStates.EDIT_VALUE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND & admin_filter, edit_value)
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,

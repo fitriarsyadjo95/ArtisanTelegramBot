@@ -8,6 +8,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
@@ -122,12 +123,13 @@ async def confirm_invoice(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         invoice = await invoice_service.get_invoice(session, invoice.id)
 
-        pdf_bytes = generate_invoice_pdf(
-            invoice=invoice,
-            quotation=invoice.quotation,
-            customer=invoice.customer,
-            line_items=invoice.quotation.line_items,
-        )
+    # Generate PDF outside session to avoid holding DB connection
+    pdf_bytes = await generate_invoice_pdf(
+        invoice=invoice,
+        quotation=invoice.quotation,
+        customer=invoice.customer,
+        line_items=invoice.quotation.line_items,
+    )
 
     await query.message.reply_document(
         document=io.BytesIO(pdf_bytes),
@@ -333,7 +335,7 @@ async def download_invoice_pdf(
         await query.message.reply_text("Invoice not found.")
         return
 
-    pdf_bytes = generate_invoice_pdf(
+    pdf_bytes = await generate_invoice_pdf(
         invoice=invoice,
         quotation=invoice.quotation,
         customer=invoice.customer,
@@ -366,6 +368,19 @@ async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return ConversationHandler.END
 
 
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.pop("inv_quotation_id", None)
+    context.user_data.pop("inv_due_days", None)
+    context.user_data.pop("pay_invoice_id", None)
+    if update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⏰ Invoice session expired. Please start over.",
+            reply_markup=invoice_menu_keyboard(),
+        )
+    return ConversationHandler.END
+
+
 # ─── Register handlers ───
 
 
@@ -384,6 +399,7 @@ def get_invoice_handlers() -> list:
                 CallbackQueryHandler(confirm_invoice, pattern="^inv_confirm$"),
                 CallbackQueryHandler(cancel_callback, pattern="^inv_cancel$"),
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,
@@ -399,6 +415,7 @@ def get_invoice_handlers() -> list:
             InvoiceStates.ENTER_PAYMENT: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND & admin_filter, enter_payment),
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,

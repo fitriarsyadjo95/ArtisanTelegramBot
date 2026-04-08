@@ -122,18 +122,29 @@ async def seed_patterns():
 async def error_handler(update, context):
     """Global error handler for the bot."""
     logger.error("Exception while handling an update:", exc_info=context.error)
+    # Clean up conversation state to prevent stale data
+    if context.user_data:
+        for key in ("quot", "book", "new_customer", "edit_customer_id", "edit_field",
+                     "inv_quotation_id", "inv_due_days", "pay_invoice_id",
+                     "new_pattern", "edit_pattern_id"):
+            context.user_data.pop(key, None)
     if update and update.effective_message:
-        error_msg = f"{type(context.error).__name__}: {context.error}"
-        await update.effective_message.reply_text(
-            f"⚠️ Error: {error_msg}"
-        )
+        try:
+            await update.effective_message.reply_text(
+                "⚠️ Something went wrong. Please try again."
+            )
+        except Exception:
+            pass
 
 
 async def main():
     await init_db()
     await seed_patterns()
 
-    bot_app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).build()
+    from app.bot.handlers.start import load_authenticated_users
+    await load_authenticated_users()
+
+    bot_app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
     register_handlers(bot_app)
     bot_app.add_error_handler(error_handler)
 

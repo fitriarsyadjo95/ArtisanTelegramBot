@@ -1,3 +1,6 @@
+import logging
+
+from sqlalchemy import select
 from telegram import Update
 from telegram.ext import (
     CallbackQueryHandler,
@@ -16,6 +19,10 @@ from app.bot.keyboards import (
     quotation_menu_keyboard,
 )
 from app.config import settings
+from app.database import async_session
+from app.models.authenticated_user import AuthenticatedUser
+
+logger = logging.getLogger(__name__)
 
 WELCOME_TEXT = (
     f"🏗 *{settings.COMPANY_NAME} Bot*\n"
@@ -24,12 +31,35 @@ WELCOME_TEXT = (
     "Select an option below:"
 )
 
-# Track authenticated users in memory (resets on bot restart)
-_authenticated_users: set[int] = set()
+# In-memory cache to avoid DB lookups on every interaction
+_auth_cache: set[int] = set()
+
+
+async def load_authenticated_users():
+    """Load authenticated users from DB into cache on startup."""
+    async with async_session() as session:
+        result = await session.execute(select(AuthenticatedUser.telegram_user_id))
+        for (uid,) in result.all():
+            _auth_cache.add(uid)
+    logger.info("Loaded %d authenticated users from DB", len(_auth_cache))
+
+
+async def _persist_auth(user_id: int):
+    """Save authenticated user to DB and cache."""
+    _auth_cache.add(user_id)
+    async with async_session() as session:
+        existing = await session.execute(
+            select(AuthenticatedUser).where(
+                AuthenticatedUser.telegram_user_id == user_id
+            )
+        )
+        if not existing.scalar_one_or_none():
+            session.add(AuthenticatedUser(telegram_user_id=user_id))
+            await session.commit()
 
 
 def is_authenticated(user_id: int) -> bool:
-    return user_id in _authenticated_users
+    return user_id in _auth_cache
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -61,7 +91,7 @@ async def check_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         pass
 
     if password == settings.BOT_PASSWORD:
-        _authenticated_users.add(user_id)
+        await _persist_auth(user_id)
         await update.message.reply_text(
             f"✅ Access granted!\n\n{WELCOME_TEXT}",
             reply_markup=main_menu_keyboard(),

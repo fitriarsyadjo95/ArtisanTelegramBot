@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import jinja2
@@ -44,7 +45,7 @@ def _stamp_path() -> str | None:
     return None
 
 
-def generate_quotation_pdf(quotation, customer, line_items) -> bytes:
+async def generate_quotation_pdf(quotation, customer, line_items) -> bytes:
     """Generate a quotation PDF and return bytes."""
     template = jinja_env.get_template("quotation.html")
     # Add empty rows to fill the table (aim for ~5 visible rows minimum)
@@ -58,11 +59,11 @@ def generate_quotation_pdf(quotation, customer, line_items) -> bytes:
         stamp_path=_stamp_path(),
         max_empty_rows=max_empty_rows,
     )
-    pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
+    pdf_bytes = await asyncio.to_thread(weasyprint.HTML(string=html_content).write_pdf)
     return pdf_bytes
 
 
-def generate_invoice_pdf(invoice, quotation, customer, line_items) -> bytes:
+async def generate_invoice_pdf(invoice, quotation, customer, line_items) -> bytes:
     """Generate an invoice PDF and return bytes."""
     template = jinja_env.get_template("invoice.html")
     html_content = template.render(
@@ -74,7 +75,7 @@ def generate_invoice_pdf(invoice, quotation, customer, line_items) -> bytes:
         bank=_bank_context(),
         stamp_path=_stamp_path(),
     )
-    pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
+    pdf_bytes = await asyncio.to_thread(weasyprint.HTML(string=html_content).write_pdf)
     return pdf_bytes
 
 

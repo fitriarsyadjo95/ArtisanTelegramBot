@@ -97,7 +97,10 @@ async def record_payment(
     invoice_id: str,
     amount: Decimal,
 ) -> Invoice:
-    invoice = await session.get(Invoice, invoice_id)
+    # Use SELECT FOR UPDATE to prevent concurrent payment race conditions
+    stmt = select(Invoice).where(Invoice.id == invoice_id).with_for_update()
+    result = await session.execute(stmt)
+    invoice = result.scalar_one_or_none()
     if not invoice:
         raise ValueError("Invoice not found")
 
@@ -114,12 +117,15 @@ async def record_payment(
     return invoice
 
 
-async def get_unpaid_invoices(session: AsyncSession) -> list[Invoice]:
+async def get_unpaid_invoices(
+    session: AsyncSession, limit: int = 50
+) -> list[Invoice]:
     stmt = (
         select(Invoice)
         .options(selectinload(Invoice.customer))
         .where(Invoice.payment_status.in_(["unpaid", "partial"]))
         .order_by(Invoice.created_at.desc())
+        .limit(limit)
     )
     result = await session.execute(stmt)
     return list(result.scalars().all())

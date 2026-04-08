@@ -1,4 +1,5 @@
 from app.models.base import Base
+from app.models.authenticated_user import AuthenticatedUser
 from app.models.customer import Customer
 from app.models.pattern import Pattern
 from app.models.quotation import Quotation
@@ -8,6 +9,7 @@ from app.models.site_visit import SiteVisit
 
 __all__ = [
     "Base",
+    "AuthenticatedUser",
     "Customer",
     "Pattern",
     "Quotation",

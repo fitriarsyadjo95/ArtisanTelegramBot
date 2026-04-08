@@ -175,7 +175,14 @@ async def create_event(
             .execute()
         )
 
-    event = await asyncio.to_thread(_create)
+    try:
+        event = await asyncio.wait_for(asyncio.to_thread(_create), timeout=15.0)
+    except asyncio.TimeoutError:
+        logger.error("Google Calendar API timeout creating event")
+        return None
+    except Exception:
+        logger.exception("Failed to create Google Calendar event")
+        return None
     logger.info("Created Google Calendar event: %s", event.get("id"))
     return event.get("id")
 
@@ -192,9 +199,12 @@ async def delete_event(event_id: str) -> bool:
         ).execute()
 
     try:
-        await asyncio.to_thread(_delete)
+        await asyncio.wait_for(asyncio.to_thread(_delete), timeout=15.0)
         logger.info("Deleted Google Calendar event: %s", event_id)
         return True
+    except asyncio.TimeoutError:
+        logger.error("Google Calendar API timeout deleting event: %s", event_id)
+        return False
     except Exception:
         logger.exception("Failed to delete Google Calendar event: %s", event_id)
         return False
@@ -223,8 +233,11 @@ async def list_events_for_date(event_date: date) -> list[dict]:
         )
 
     try:
-        result = await asyncio.to_thread(_list)
+        result = await asyncio.wait_for(asyncio.to_thread(_list), timeout=15.0)
         return result.get("items", [])
+    except asyncio.TimeoutError:
+        logger.error("Google Calendar API timeout listing events")
+        return []
     except Exception:
         logger.exception("Failed to list Google Calendar events")
         return []

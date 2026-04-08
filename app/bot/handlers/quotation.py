@@ -9,6 +9,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
@@ -560,12 +561,12 @@ async def confirm_quotation(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         # Reload with relationships
         quotation = await quotation_service.get_quotation(session, quotation.id)
 
-        # Generate PDF
-        pdf_bytes = generate_quotation_pdf(
-            quotation=quotation,
-            customer=quotation.customer,
-            line_items=quotation.line_items,
-        )
+    # Generate PDF outside session to avoid holding DB connection
+    pdf_bytes = await generate_quotation_pdf(
+        quotation=quotation,
+        customer=quotation.customer,
+        line_items=quotation.line_items,
+    )
 
     # Send PDF
     await query.message.reply_document(
@@ -716,7 +717,7 @@ async def download_quotation_pdf(
         await query.message.reply_text("Quotation not found.")
         return
 
-    pdf_bytes = generate_quotation_pdf(
+    pdf_bytes = await generate_quotation_pdf(
         quotation=quotation,
         customer=quotation.customer,
         line_items=quotation.line_items,
@@ -735,6 +736,11 @@ async def update_quotation_status(
     query = update.callback_query
     await query.answer()
     parts = query.data.replace("quot_status_", "").rsplit("_", 1)
+    if len(parts) != 2 or parts[1] not in ("sent", "accepted", "rejected", "expired"):
+        await query.edit_message_text(
+            "Invalid action.", reply_markup=quotation_menu_keyboard()
+        )
+        return
     quotation_id = parts[0]
     new_status = parts[1]
 
@@ -829,6 +835,17 @@ async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return ConversationHandler.END
 
 
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.pop("quot", None)
+    if update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⏰ Quotation session expired. Please start over.",
+            reply_markup=quotation_menu_keyboard(),
+        )
+    return ConversationHandler.END
+
+
 # ─── Register handlers ───
 
 
@@ -882,6 +899,7 @@ def get_quotation_handlers() -> list:
             QuotationStates.CONFIRM: [
                 CallbackQueryHandler(confirm_quotation, pattern=r"^quot_(confirm|cancel|restart)$"),
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[
             CommandHandler("cancel", cancel),

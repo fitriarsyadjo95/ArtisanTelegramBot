@@ -7,6 +7,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
@@ -196,6 +197,18 @@ async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return ConversationHandler.END
 
 
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.pop("new_pattern", None)
+    context.user_data.pop("edit_pattern_id", None)
+    if update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⏰ Settings session expired. Please start over.",
+            reply_markup=settings_menu_keyboard(),
+        )
+    return ConversationHandler.END
+
+
 # ─── Register handlers ───
 
 
@@ -209,6 +222,7 @@ def get_settings_handlers() -> list:
             SettingsStates.ADD_PATTERN_RATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND & admin_filter, add_pattern_rate)
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,
@@ -224,6 +238,7 @@ def get_settings_handlers() -> list:
             SettingsStates.EDIT_PATTERN_RATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND & admin_filter, edit_pattern_rate)
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         conversation_timeout=300,
